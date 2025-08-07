@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net472;netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0</TargetFrameworks>
     <AssemblyName>OSPSuite.FuncParser</AssemblyName>
     <Version>1.0.0</Version>
     <PackageVersion>1.0.0</PackageVersion>
@@ -16,7 +16,7 @@
     <Authors>Open Systems Pharmacology Community</Authors>
     <DebugType>full</DebugType>
     <DebugSymbols>true</DebugSymbols>
-    <Copyright>© Open Systems Pharmacology Community 2020</Copyright>
+    <Copyright>© Open Systems Pharmacology Community 2025</Copyright>
     <Product>OSPSuite FuncParser</Product>
     <Configurations>Debug;Release;Purify_Debug</Configurations>
     <NuspecProperties>version=$(PackageVersion)</NuspecProperties>

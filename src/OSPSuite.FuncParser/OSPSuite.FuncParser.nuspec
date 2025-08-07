@@ -26,9 +26,6 @@
     <file src="bin\Release\netstandard2.0\OSPSuite.FuncParser.dll" target="lib\netstandard2.0" />
     <file src="bin\Release\netstandard2.0\OSPSuite.FuncParser.pdb" target="lib\netstandard2.0" />
 
-    <file src="bin\Release\net472\OSPSuite.FuncParser.dll" target="lib\net472" />
-    <file src="bin\Release\net472\OSPSuite.FuncParser.pdb" target="lib\net472" />
-
     <file src="..\OSPSuite.FuncParserNative\include\**\*.h" target="OSPSuite.FuncParserNative\include" />
     <file src="..\OSPSuite.FuncParserNative\src\**\*.*" target="OSPSuite.FuncParserNative\src" />
     <file src="..\OSPSuite.FuncParserNative\*.*" target="OSPSuite.FuncParserNative" exclude="..\OSPSuite.FuncParserNative\*.vcxproj*" />
