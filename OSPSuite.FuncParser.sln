@@ -7,6 +7,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 	ProjectSection(SolutionItems) = preProject
 		.gitignore = .gitignore
 		.github\workflows\build-and-publish.yml = .github\workflows\build-and-publish.yml
+		buildNix.sh = buildNix.sh
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OSPSuite.FuncParserNative", "src\OSPSuite.FuncParserNative\OSPSuite.FuncParserNative.vcxproj", "{2661A715-1870-403C-9563-5C3CDC31974A}"
@@ -91,7 +92,7 @@ Global
 		{E5F8B8E5-D8A1-48C9-AB71-FC28340725E8} = {393E925C-E2F6-42FA-BE44-E807946414C0}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {CDF5644F-00DC-44EF-93DD-65E63726C186}
 		VisualSVNWorkingCopyRoot = .
+		SolutionGuid = {CDF5644F-00DC-44EF-93DD-65E63726C186}
 	EndGlobalSection
 EndGlobal

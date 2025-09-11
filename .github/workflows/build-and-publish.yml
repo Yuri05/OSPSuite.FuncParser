@@ -119,7 +119,7 @@ jobs:
 
       - name: Add OSP NuGet Source
         run: |
-          nuget sources add -username Open-Systems-Pharmacology -password ${{ secrets.GITHUB_TOKEN }} -name OSP-GitHub-Packages -source "https://nuget.pkg.github.com/Open-Systems-Pharmacology/index.json"
+          dotnet nuget add source "https://nuget.pkg.github.com/Open-Systems-Pharmacology/index.json"  --name OSP-GitHub-Packages --username Open-Systems-Pharmacology --password ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build Debug and Release
         run: ./buildNix.sh ${{matrix.platform}}  ${{env.APP_VERSION}}
@@ -160,10 +160,10 @@ jobs:
 
       - name: Add OSP NuGet Source
         run: |
-          nuget sources add -username Open-Systems-Pharmacology -password ${{ secrets.GITHUB_TOKEN }} -name OSP-GitHub-Packages -source "https://nuget.pkg.github.com/Open-Systems-Pharmacology/index.json"
+          dotnet nuget add source "https://nuget.pkg.github.com/Open-Systems-Pharmacology/index.json"  --name OSP-GitHub-Packages --username Open-Systems-Pharmacology --password ${{ secrets.GITHUB_TOKEN }}
 
       - name: Restore dependencies
-        run: dotnet restore --source https://ci.appveyor.com/nuget/ospsuite-utility --source https://ci.appveyor.com/nuget/ospsuite-bddhelper --source https://www.nuget.org/api/v2/
+        run: dotnet restore
 
       - name: Update version.h
         shell: pwsh
