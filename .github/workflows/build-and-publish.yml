@@ -119,7 +119,7 @@ jobs:
 
       - name: Add OSP NuGet Source
         run: |
-          dotnet nuget add source "https://nuget.pkg.github.com/Open-Systems-Pharmacology/index.json"  --name OSP-GitHub-Packages --username Open-Systems-Pharmacology --password ${{ secrets.GITHUB_TOKEN }}
+          dotnet nuget add source "https://nuget.pkg.github.com/Open-Systems-Pharmacology/index.json"  --name OSP-GitHub-Packages --username Open-Systems-Pharmacology --password ${{ secrets.GITHUB_TOKEN }} --store-password-in-clear-text
 
       - name: Build Debug and Release
         run: ./buildNix.sh ${{matrix.platform}}  ${{env.APP_VERSION}}
