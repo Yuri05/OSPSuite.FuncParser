@@ -117,6 +117,10 @@ jobs:
               -e "s@BUILD 0@BUILD ${{ env.BUILD_ID }}@g" \
               src/OSPSuite.FuncParserNative/version.h
 
+      - name: Add OSP NuGet Source
+        run: |
+          dotnet nuget add source "https://nuget.pkg.github.com/Open-Systems-Pharmacology/index.json"  --name OSP-GitHub-Packages --username Open-Systems-Pharmacology --password ${{ secrets.GITHUB_TOKEN }} --store-password-in-clear-text
+
       - name: Build Debug and Release
         run: ./buildNix.sh ${{matrix.platform}}  ${{env.APP_VERSION}}
 
@@ -154,8 +158,12 @@ jobs:
           echo "APP_VERSION=${{needs.get-version.outputs.APP_VERSION}}" | Out-File -FilePath $env:GITHUB_ENV -Append
           echo "BUILD_ID=${{needs.get-version.outputs.BUILD_ID}}" | Out-File -FilePath $env:GITHUB_ENV -Append
 
+      - name: Add OSP NuGet Source
+        run: |
+          dotnet nuget add source "https://nuget.pkg.github.com/Open-Systems-Pharmacology/index.json"  --name OSP-GitHub-Packages --username Open-Systems-Pharmacology --password ${{ secrets.GITHUB_TOKEN }}
+
       - name: Restore dependencies
-        run: dotnet restore --source https://ci.appveyor.com/nuget/ospsuite-utility --source https://ci.appveyor.com/nuget/ospsuite-bddhelper --source https://www.nuget.org/api/v2/
+        run: dotnet restore
 
       - name: Update version.h
         shell: pwsh

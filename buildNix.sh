@@ -12,7 +12,7 @@ fi
 
 rm -f OSPSuite.FuncParser4Nix.sln
 
-dotnet restore --source https://ci.appveyor.com/nuget/ospsuite-utility --source https://ci.appveyor.com/nuget/ospsuite-bddhelper --source https://www.nuget.org/api/v2/
+dotnet restore
 
 # copy the original solution file because it will be modified for dotnet build
 cp -p -f OSPSuite.FuncParser.sln OSPSuite.FuncParser4Nix.sln
