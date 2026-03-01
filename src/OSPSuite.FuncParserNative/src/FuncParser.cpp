@@ -133,7 +133,7 @@ const Constants & FuncParser::GetConstants () const
     return _constants;
 }
 
-bool FuncParser::IsBracketed(const string& SubExpr) const
+bool FuncParser::IsBracketed(const std::string& SubExpr) const
 {
     if (SubExpr.empty() || SubExpr[0] != '(' || SubExpr[SubExpr.size()-1] != ')')
         return false;
