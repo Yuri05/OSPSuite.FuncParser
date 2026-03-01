@@ -255,3 +255,6 @@ Build
 /tests/OSPSuite.FuncParser.Tests/ReleaseX64
 /00/*.7z
 /01_COnversionVS2017_Versuch#1/*.7z
+
+# CMake build directory
+build/
