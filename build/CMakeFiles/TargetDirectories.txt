@@ -1,3 +1,0 @@
-/home/runner/work/OSPSuite.FuncParser/OSPSuite.FuncParser/build/CMakeFiles/OSPSuite.FuncParserNative.dir
-/home/runner/work/OSPSuite.FuncParser/OSPSuite.FuncParser/build/CMakeFiles/edit_cache.dir
-/home/runner/work/OSPSuite.FuncParser/OSPSuite.FuncParser/build/CMakeFiles/rebuild_cache.dir
