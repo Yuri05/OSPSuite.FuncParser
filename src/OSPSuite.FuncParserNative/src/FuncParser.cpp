@@ -135,13 +135,15 @@ const Constants & FuncParser::GetConstants () const
 
 bool FuncParser::IsBracketed(const std::string& SubExpr) const
 {
-    if (SubExpr.empty() || SubExpr[0] != '(' || SubExpr[SubExpr.size()-1] != ')')
+	auto expressionSize = SubExpr.size();
+	
+    if (expressionSize < 2 || SubExpr[0] != '(' || SubExpr[expressionSize-1] != ')')
         return false;
 
 	//We already know that SubExpr[0]="("
 	//So we can set the brackets counter to 1 and start with the 2nd character of the string
     long BracketCounter = 1; 
-    for(size_t i = 1; i < SubExpr.size(); i++)
+    for(size_t i = 1; i < expressionSize; i++)
     {
         if (SubExpr[i] == '(')
             BracketCounter++;
@@ -150,7 +152,7 @@ bool FuncParser::IsBracketed(const std::string& SubExpr) const
 
 		//If we found the closing bracket for the initial opening bracket before the end of the string: 
 		//the whole string is not a bracketed expression. E.g. the string can be something like (x+y)*(z+t)
-        if (BracketCounter == 0 && i < SubExpr.size()-1)
+        if (BracketCounter == 0 && i < expressionSize-1)
             return false;
     }
     return BracketCounter == 0;
