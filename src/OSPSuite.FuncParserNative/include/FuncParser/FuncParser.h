@@ -6,6 +6,7 @@
 #include <vector>
 // ReSharper disable once CppUnusedIncludeDirective
 #include <assert.h>
+#include <string_view>
 #include "FuncParser/FuncNode.h"
 
 namespace FuncParserNative
@@ -20,7 +21,7 @@ class FuncParser
 		
 		//Is used for error message only! Will be set at the beginning of the Parse function
 		std::string _stringToParse;
-      void adjustErrorDescription(FuncParserErrorData & ED, const std::string & subExpression);
+      void adjustErrorDescription(FuncParserErrorData & ED, std::string_view subExpression);
 	
 	public:
 		const static std::string conNOTSymbol;
@@ -61,19 +62,19 @@ class FuncParser
 		const Constants & GetConstants () const;
 	
 	private:
-		bool IsBracketed (const std::string & SubExpr) const;
-      std::string RemoveBrackets (const std::string & SubExpr) const;
+		bool IsBracketed (std::string_view SubExpr) const;
+		std::string_view RemoveBrackets (std::string_view SubExpr) const;
 	
 	public:
 		FuncNode * Parse (const std::string & ParsedString, const std::vector < std::string > & VariableNames, const std::vector < std::string > & ParameterNames, bool CaseSensitive, bool LogicOperatorsAllowed, double ComparisonTolerance, bool LogicalNumericMixAllowed);
 	
 	private:
-		void EvalExpression (FuncNode * SubNode, const std::string & SubExpr, enmLevelOfAbstraction LevelOfAbstraction);
-		void EvalNOTOperand (FuncNode * SubNode, const std::string & SubExpr);
-		void EvalComparison (FuncNode * SubNode, const std::string & SubExpr);
-		void EvalFactor (FuncNode * SubNode, const std::string & SubExpr);
-		void EvalIF (FuncNode * SubNode, const std::string & SubExpr);
-		bool IsScientificNumber (const std::string & SubExpr, size_t OpPos);
+		void EvalExpression (FuncNode * SubNode, std::string_view SubExpr, enmLevelOfAbstraction LevelOfAbstraction);
+		void EvalNOTOperand (FuncNode * SubNode, std::string_view SubExpr);
+		void EvalComparison (FuncNode * SubNode, std::string_view SubExpr);
+		void EvalFactor (FuncNode * SubNode, std::string_view SubExpr);
+		void EvalIF (FuncNode * SubNode, std::string_view SubExpr);
+		bool IsScientificNumber (std::string_view SubExpr, size_t OpPos);
 	
 	public:
 		void CheckVarParamNames (const std::vector < std::string > & VariableNames, const std::vector < std::string > & ParameterNames);
@@ -83,14 +84,14 @@ class FuncParser
 		//        x/y/z/t => x/(y*z*t)
 		void RearrangeTerms (std::string & SubExpr, enmLevelOfAbstraction LevelOfAbstraction, const std::string & Op1,
                            const std::string & Op2);
-		
+
 		//Parses the string <SubExpr> starting at <FirstPos> till <Op1> or <Op2> is found (or the end of the string is reached) and returns next term in the expression .
-		//Returns empty string if no more terms available.
+		//Returns empty string_view if no more terms available.
 		//
 		//<NewOp> returns reached operand (<Op1> or <Op2>) or empty string for last term.
 		//
 		//<FirstPos> is adjusted to the start position of the next term at the end of the function
-		std::string GetNextTerm (const std::string & SubExpr, enmLevelOfAbstraction LevelOfAbstraction, const std::string &
+		std::string_view GetNextTerm (std::string_view SubExpr, enmLevelOfAbstraction LevelOfAbstraction, const std::string &
                                Op1, const std::string & Op2, size_t & FirstPos, std::string & NewOp);
 };
 

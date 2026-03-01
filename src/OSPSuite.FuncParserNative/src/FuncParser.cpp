@@ -133,16 +133,16 @@ const Constants & FuncParser::GetConstants () const
     return _constants;
 }
 
-bool FuncParser::IsBracketed(const std::string& SubExpr) const
+bool FuncParser::IsBracketed(std::string_view SubExpr) const
 {
 	auto expressionSize = SubExpr.size();
-	
+
     if (expressionSize < 2 || SubExpr[0] != '(' || SubExpr[expressionSize-1] != ')')
         return false;
 
 	//We already know that SubExpr[0]="("
 	//So we can set the brackets counter to 1 and start with the 2nd character of the string
-    long BracketCounter = 1; 
+    long BracketCounter = 1;
     for(size_t i = 1; i < expressionSize; i++)
     {
         if (SubExpr[i] == '(')
@@ -150,7 +150,7 @@ bool FuncParser::IsBracketed(const std::string& SubExpr) const
         else if (SubExpr[i] == ')')
             BracketCounter--;
 
-		//If we found the closing bracket for the initial opening bracket before the end of the string: 
+		//If we found the closing bracket for the initial opening bracket before the end of the string:
 		//the whole string is not a bracketed expression. E.g. the string can be something like (x+y)*(z+t)
         if (BracketCounter == 0 && i < expressionSize-1)
             return false;
@@ -158,7 +158,7 @@ bool FuncParser::IsBracketed(const std::string& SubExpr) const
     return BracketCounter == 0;
 }
 
-std::string FuncParser::RemoveBrackets (const std::string & SubExpr) const
+std::string_view FuncParser::RemoveBrackets (std::string_view SubExpr) const
 {
    auto expressionWithoutOuterBrackets = SubExpr;
 
@@ -332,7 +332,7 @@ FuncNode * FuncParser::Parse (const std::string & ParsedString, const std::vecto
 	return newNode;
 }
 
-void FuncParser::EvalExpression (FuncNode * SubNode, const std::string & SubExpr, enmLevelOfAbstraction LevelOfAbstraction) 
+void FuncParser::EvalExpression (FuncNode * SubNode, std::string_view SubExpr, enmLevelOfAbstraction LevelOfAbstraction)
 {
 	const char * ERROR_SOURCE = "FuncParser::EvalExpression";
 
@@ -345,7 +345,7 @@ void FuncParser::EvalExpression (FuncNode * SubNode, const std::string & SubExpr
 		bool FirstTerm = true;
 		size_t FirstPos = 0;
 		std::string NewOp;
-		std::string NextTerm;
+		std::string_view NextTerm;
 
       auto expression = SubExpr;
 
@@ -384,8 +384,13 @@ void FuncParser::EvalExpression (FuncNode * SubNode, const std::string & SubExpr
 				EF2 = (*_elemFunctions)[ElemFunction::EF_MINUS];
 				NextLevelOfAbstraction = LOA_MULDIV;
 				//replace expression beginning with - (e.g. -2*x+3) with 0-<old expr.>
-				if (expression.substr(0,1) == "-")
-					expression = "0"+expression;
+				if (!expression.empty() && expression[0] == '-')
+				{
+					// Need to create a temporary string for this case
+					std::string temp = "0" + std::string(expression);
+					EvalExpression(SubNode, temp, LevelOfAbstraction);
+					return;
+				}
 				break;
 			case LOA_MULDIV:
 				EF1 = (*_elemFunctions)[ElemFunction::EF_MUL];
@@ -404,7 +409,10 @@ void FuncParser::EvalExpression (FuncNode * SubNode, const std::string & SubExpr
 
 		if ((LevelOfAbstraction == LOA_PLUSMINUS) || (LevelOfAbstraction == LOA_MULDIV))
 		{
-			RearrangeTerms(expression, LevelOfAbstraction, Op1, Op2);
+			// RearrangeTerms needs to modify the string, so we need a temporary copy
+			std::string tempExpr(expression);
+			RearrangeTerms(tempExpr, LevelOfAbstraction, Op1, Op2);
+			expression = tempExpr;
 		}
 
 		while(true)
@@ -463,13 +471,13 @@ void FuncParser::EvalExpression (FuncNode * SubNode, const std::string & SubExpr
 
 }
 
-void FuncParser::EvalNOTOperand (FuncNode * SubNode, const std::string & SubExpr)
+void FuncParser::EvalNOTOperand (FuncNode * SubNode, std::string_view SubExpr)
 {
 	const std::string ERROR_SOURCE = "FuncParser::EvalNOTOperand";
 
 	try
 	{
-		if (SubExpr.substr(0,1) == conNOTSymbol)
+		if (!SubExpr.empty() && SubExpr[0] == conNOTSymbol[0])
 		{
 			SubNode->SetNodeType(FuncNode::NT_FUNCTION);
             SubNode->SetNodeFunction((*_elemFunctions)[ElemFunction::EF_NOT]);
@@ -491,7 +499,7 @@ void FuncParser::EvalNOTOperand (FuncNode * SubNode, const std::string & SubExpr
 	}
 }
 
-void FuncParser::EvalComparison (FuncNode * SubNode, const std::string & SubExpr)
+void FuncParser::EvalComparison (FuncNode * SubNode, std::string_view SubExpr)
 {
 	const std::string ERROR_SOURCE = "FuncParser::EvalComparison";
 
@@ -510,13 +518,13 @@ void FuncParser::EvalComparison (FuncNode * SubNode, const std::string & SubExpr
 		BracketsCount = 0;
 		for (i=0; i<SubExpr.length(); i++)
 		{
-			NextCharacter = SubExpr.substr(i,1);
-			if (NextCharacter == "(")
+			char nextChar = SubExpr[i];
+			if (nextChar == '(')
 				BracketsCount++;
-			else if (NextCharacter == ")")
+			else if (nextChar == ')')
 				BracketsCount--;
-			else if (((NextCharacter == "<") || (NextCharacter == ">") ||
-                      (NextCharacter == "=") || (NextCharacter == "!")) &&
+			else if (((nextChar == '<') || (nextChar == '>') ||
+                      (nextChar == '=') || (nextChar == '!')) &&
                      (BracketsCount == 0))
             {
             	if (i == 0)
@@ -527,9 +535,9 @@ void FuncParser::EvalComparison (FuncNode * SubNode, const std::string & SubExpr
 					                          "Missing second operand in logical statement");
 
           		FirstOperandLastPosition = i - 1;
-          		SubSubExpr = SubExpr.substr(FirstOperandLastPosition+1, 2);
+          		SubSubExpr = std::string(SubExpr.substr(FirstOperandLastPosition+1, 2));
 
-          		if ((NextCharacter == "!") && (SubSubExpr.substr(1,1) != "="))
+          		if ((nextChar == '!') && (SubSubExpr.substr(1,1) != "="))
 					throw FuncParserErrorData(FuncParserErrorData::err_PARSE, ERROR_SOURCE,
 					                          "Missing '=' after '!'");
           		if ((SubSubExpr == "<=") || (SubSubExpr == ">=") ||
@@ -540,8 +548,8 @@ void FuncParser::EvalComparison (FuncNode * SubNode, const std::string & SubExpr
 
         		SubNode->SetNodeType(FuncNode::NT_FUNCTION);
 
-				std::string FuncString = SubExpr.substr(FirstOperandLastPosition + 1,
-        		                                        SecondOperandFirstPosition - FirstOperandLastPosition - 1);
+				std::string FuncString = std::string(SubExpr.substr(FirstOperandLastPosition + 1,
+        		                                        SecondOperandFirstPosition - FirstOperandLastPosition - 1));
         		SubNode->SetNodeFunction((*_elemFunctions)[FuncString]);
         		assert(SubNode->GetNodeFunction()!=NULL);
 
@@ -572,7 +580,7 @@ void FuncParser::EvalComparison (FuncNode * SubNode, const std::string & SubExpr
 
 }
 
-void FuncParser::EvalFactor (FuncNode * SubNode, const std::string & SubExpr)
+void FuncParser::EvalFactor (FuncNode * SubNode, std::string_view SubExpr)
 {
 	const std::string ERROR_SOURCE = "FuncParser::EvalFactor";
 
@@ -582,7 +590,6 @@ void FuncParser::EvalFactor (FuncNode * SubNode, const std::string & SubExpr)
 		std::string FuncName, VarName;
 		long BracketsCount;
         size_t CharPos;
-		std::string NextCharacter;
 
 		if (SubExpr.length() == 0)
 			throw FuncParserErrorData(FuncParserErrorData::err_PARSE, ERROR_SOURCE,
@@ -594,10 +601,12 @@ void FuncParser::EvalFactor (FuncNode * SubNode, const std::string & SubExpr)
 			return;
 		}
 
-		if (IsNumeric(SubExpr)) //Constant
+		// Convert to string for IsNumeric check (it needs null-terminated string)
+		std::string SubExprStr(SubExpr);
+		if (IsNumeric(SubExprStr)) //Constant
 		{
 			SubNode->SetNodeType(FuncNode::NT_CONST);
-			SubNode->SetNodeValue(StringToDouble(SubExpr));
+			SubNode->SetNodeValue(StringToDouble(SubExprStr));
 			return;
 		}
 
@@ -616,10 +625,10 @@ void FuncParser::EvalFactor (FuncNode * SubNode, const std::string & SubExpr)
 			BracketsCount = 0;
 			for (i=0; i<=CharPos - 1; i++)
 			{
-				NextCharacter = SubExpr.substr(i,1);
-				if (NextCharacter == "(")
+				char nextChar = SubExpr[i];
+				if (nextChar == '(')
 					BracketsCount++;
-				else if (NextCharacter == ")")
+				else if (nextChar == ')')
 					BracketsCount--;
 			}
 			if (BracketsCount == 0) //so a^b^c will be evaluated as a^(b^c)
@@ -644,12 +653,12 @@ void FuncParser::EvalFactor (FuncNode * SubNode, const std::string & SubExpr)
 			}
 
 		//check if variable with argument <Var>(<Expr>)
-		if (SubExpr.substr(SubExpr.length()-1,1) == ")")
+		if (!SubExpr.empty() && SubExpr[SubExpr.length()-1] == ')')
 		{
 			CharPos = SubExpr.find_first_of('(');
 			if (CharPos > 0)
 			{
-				VarName = SubExpr.substr(0,CharPos);
+				VarName = std::string(SubExpr.substr(0,CharPos));
 
 				for (i=0; i<_variableNames.size(); i++)
 				{
@@ -680,15 +689,16 @@ void FuncParser::EvalFactor (FuncNode * SubNode, const std::string & SubExpr)
 
 		//Check, if constant
 		//Comparison with constants are NOT case sensitive, so PI, Pi, pi are all accepted
-		if (_constants.Exists(ToUpper(SubExpr)))
+		std::string SubExprUpper = ToUpper(SubExprStr);
+		if (_constants.Exists(SubExprUpper))
 		{
 			SubNode->SetNodeType(FuncNode::NT_CONST);
-			SubNode->SetNodeValue(_constants[ToUpper(SubExpr)]->GetValue());
+			SubNode->SetNodeValue(_constants[SubExprUpper]->GetValue());
 			return;
 		}
 
 		//check for NaN
-		if ((ToUpper(SubExpr) == "NAN") || (ToUpper(SubExpr) == "N.DEF.") || (ToUpper(SubExpr) == "N. DEF."))
+		if ((SubExprUpper == "NAN") || (SubExprUpper == "N.DEF.") || (SubExprUpper == "N. DEF."))
 		{
 			SubNode->SetNodeType(FuncNode::NT_CONST);
 			SubNode->SetNodeValue(Math::GetNaN());
@@ -696,7 +706,7 @@ void FuncParser::EvalFactor (FuncNode * SubNode, const std::string & SubExpr)
 		}
 
 		//check if SubExpr is known (elementary) function <f>(<Expr>)
-		if (SubExpr.substr(SubExpr.length()-1,1) != ")")
+		if (SubExpr.empty() || SubExpr[SubExpr.length()-1] != ')')
 			throw FuncParserErrorData(FuncParserErrorData::err_PARSE, ERROR_SOURCE,
 			                          "Invalid Expression");
 		CharPos = SubExpr.find_first_of('(');
@@ -704,7 +714,7 @@ void FuncParser::EvalFactor (FuncNode * SubNode, const std::string & SubExpr)
 			throw FuncParserErrorData(FuncParserErrorData::err_PARSE, ERROR_SOURCE,
 			                          "Invalid Expression");
 
-		FuncName = ToUpper(SubExpr.substr(0,CharPos));
+		FuncName = ToUpper(std::string(SubExpr.substr(0,CharPos)));
 		ElemFunction * pElemFunc = (*_elemFunctions)[FuncName];
 		if (pElemFunc == NULL)
 			throw FuncParserErrorData(FuncParserErrorData::err_PARSE, ERROR_SOURCE,
@@ -713,18 +723,18 @@ void FuncParser::EvalFactor (FuncNode * SubNode, const std::string & SubExpr)
 		//special treatment: random functions (Rnd(), Srnd())
 		if (pElemFunc->IsRandomFunction ())
 		{
-			std::string rndArgs = SubExpr.substr(CharPos+1,SubExpr.length()-CharPos-2);
+			std::string_view rndArgs = SubExpr.substr(CharPos+1,SubExpr.length()-CharPos-2);
 			if (rndArgs.length()>0)
-				throw FuncParserErrorData(FuncParserErrorData::err_PARSE, ERROR_SOURCE, 
+				throw FuncParserErrorData(FuncParserErrorData::err_PARSE, ERROR_SOURCE,
 	  			                          "Arguments list for the "+FuncName + " must be empty");
-	  		
+
 	  		//setup node
 			SubNode->SetNodeType(FuncNode::NT_FUNCTION);
 			SubNode->SetNodeFunction(pElemFunc);
-			
+
 			return;
 		}
-		
+
 		//special treatment:
 		// Min(x;y), Max(x;y)
 		// EQ(X;Y), GT(X;Y), GEQ(X;Y), LT(X;Y), LEQ(X;Y), NEQ(X;Y)
@@ -735,9 +745,10 @@ void FuncParser::EvalFactor (FuncNode * SubNode, const std::string & SubExpr)
 		    (pElemFunc->GetType() == ElemFunction::EF_LESSEQUAL_F) || (pElemFunc->GetType() == ElemFunction::EF_UNEQUAL_F) ||
 		    (pElemFunc->GetType() == ElemFunction::EF_POWER_F) )
 		{
-			std::string FirstArg, SecondArg, Rest, NewOp;
+			std::string_view FirstArg, SecondArg, Rest;
+			std::string NewOp;
 			size_t FirstPos = 0;
-			std::string ArgList = SubExpr.substr(CharPos+1,SubExpr.length()-CharPos-2);
+			std::string_view ArgList = SubExpr.substr(CharPos+1,SubExpr.length()-CharPos-2);
 
 			//get first argument
 			FirstArg = GetNextTerm(ArgList, LOA_FACTOR, conListDelimiter, conListDelimiter, FirstPos, NewOp);
@@ -788,7 +799,7 @@ void FuncParser::EvalFactor (FuncNode * SubNode, const std::string & SubExpr)
 
 }
 
-void FuncParser::EvalIF (FuncNode * SubNode, const std::string & SubExpr)
+void FuncParser::EvalIF (FuncNode * SubNode, std::string_view SubExpr)
 {
 	const std::string ERROR_SOURCE = "FuncParser::EvalIF";
 	const std::string Op1 = "?";
@@ -796,7 +807,7 @@ void FuncParser::EvalIF (FuncNode * SubNode, const std::string & SubExpr)
 
 	try
 	{
-		std::string IfStatement, ThenStatement, ElseStatement;
+		std::string_view IfStatement, ThenStatement, ElseStatement;
 		size_t FirstPos = 0;
 		std::string NewOp;
 
@@ -962,7 +973,7 @@ void FuncParser::CheckVarParamNames (const std::vector < std::string > & Variabl
 	}
 }
 
-bool FuncParser::IsScientificNumber (const std::string & SubExpr, size_t OpPos)
+bool FuncParser::IsScientificNumber (std::string_view SubExpr, size_t OpPos)
 {
     if ((OpPos>=2) && (OpPos<=SubExpr.length()-2))
 	{
@@ -970,9 +981,9 @@ bool FuncParser::IsScientificNumber (const std::string & SubExpr, size_t OpPos)
 		char PreChar2 = SubExpr[OpPos-2];
 		char PostChar = SubExpr[OpPos+1];
 
-		//check if the Substring is of the form *dE�d* (or *de�d*), where
+		//check if the Substring is of the form *dE±d* (or *de±d*), where
 		// <d> is any digit and
-		// <�> is + or - (this is checked by caller!)
+		// <±> is + or - (this is checked by caller!)
 		if( ((PreChar1=='E') || (PreChar1=='e')) &&
 		     (PreChar2>='0') && (PreChar2<='9')  &&
 		     (PostChar>='0') && (PostChar<='9'))
@@ -1022,30 +1033,31 @@ void FuncParser::RearrangeTerms (std::string & SubExpr, enmLevelOfAbstraction Le
 	{
 		std::vector<std::string> Op1_Terms;
 		std::vector<std::string> Op2_Terms;
-		std::string NextTerm;
+		std::string_view NextTerm;
 		size_t FirstPos = 0;
 		std::string NewOp, PreviousOp;
 		bool FirstTerm = true;
         size_t i;
 
 		// parse expression and put the terms in 2 lists depending on their operand
+		std::string_view SubExprView = SubExpr;
 		while(true)
 		{
-			NextTerm = GetNextTerm(SubExpr, LevelOfAbstraction, Op1, Op2, FirstPos, NewOp);
+			NextTerm = GetNextTerm(SubExprView, LevelOfAbstraction, Op1, Op2, FirstPos, NewOp);
 
 			if (FirstTerm)
 			{
 				// 1st term is automatically in Op1-List
-				Op1_Terms.push_back(NextTerm);
+				Op1_Terms.push_back(std::string(NextTerm));
 				FirstTerm = false;
 			}
 			else
 			{
 				// put current term in the list depending on operand BEFORE it (<PreviousOp>)
 				if (PreviousOp == Op1)
-					Op1_Terms.push_back(NextTerm);
+					Op1_Terms.push_back(std::string(NextTerm));
 				else
-					Op2_Terms.push_back(NextTerm);
+					Op2_Terms.push_back(std::string(NextTerm));
 			}
 
 			// check if last term and exit loop if so
@@ -1093,13 +1105,13 @@ void FuncParser::RearrangeTerms (std::string & SubExpr, enmLevelOfAbstraction Le
 	}
 }
 
-std::string FuncParser::GetNextTerm (const std::string & SubExpr, enmLevelOfAbstraction LevelOfAbstraction, const std::string
+std::string_view FuncParser::GetNextTerm (std::string_view SubExpr, enmLevelOfAbstraction LevelOfAbstraction, const std::string
                                      & Op1, const std::string & Op2, size_t & FirstPos, std::string & NewOp)
 {
 	// ______________________________________________________________________________________________________________________________
 	// Parses the string <SubExpr> starting at <FirstPos> till <Op1> or <Op2> is found (or the end of the string is reached)
 	// and returns next term in the expression .
-	// Returns empty string if no more terms available.
+	// Returns empty string_view if no more terms available.
 	//
 	// <NewOp> returns reached operand (<Op1> or <Op2>) or empty string for last term.
 	//
@@ -1108,13 +1120,12 @@ std::string FuncParser::GetNextTerm (const std::string & SubExpr, enmLevelOfAbst
 
 	const char * ERROR_SOURCE = "FuncParser::GetNextTerm";
 
-	std::string NextTerm;    // next found term (return value)
+	std::string_view NextTerm;    // next found term (return value)
 
 	try
 	{
 		size_t LastPos = FirstPos;   //index of the next character to be analyzed
 		long BracketsCount = 0;    // No. of brackets in the expression
-		std::string NextCharacter; // next char to be investigated
 
 		// check expression is not empty
 		if (SubExpr.length() == 0)
@@ -1124,9 +1135,9 @@ std::string FuncParser::GetNextTerm (const std::string & SubExpr, enmLevelOfAbst
 		// reset next operation to be returned (return empty value for last term)
 		NewOp = "";
 
-		// if <FirstPos> is beyond the end of expression - return empty string
+		// if <FirstPos> is beyond the end of expression - return empty string_view
         if(FirstPos >= SubExpr.length())
-			return "";
+			return std::string_view();
 
 		// go along the expression <SubExpr> till <Op1> or <Op2> is found (or the end of the string is reached)
 		while(true)
@@ -1136,19 +1147,21 @@ std::string FuncParser::GetNextTerm (const std::string & SubExpr, enmLevelOfAbst
 				break;
 
 			// read next char and analyze it
-			NextCharacter = SubExpr.substr(LastPos,1);
-			if (NextCharacter == "(")
+			char NextCharacter = SubExpr[LastPos];
+			if (NextCharacter == '(')
 				BracketsCount++;
-			else if(NextCharacter == ")")
+			else if(NextCharacter == ')')
 				BracketsCount--;
-			else if (((NextCharacter == Op1) || (NextCharacter == Op2)) && (BracketsCount == 0))
+			else if ((BracketsCount == 0) &&
+			         ((Op1.length() == 1 && NextCharacter == Op1[0]) ||
+			          (Op2.length() == 1 && NextCharacter == Op2[0])))
 			{
 				//if it's not a number in scientific notation - stop
 				//<IsScientificNumber> checks NOT whether +/- is reached, so check it here
 				if (! ((LevelOfAbstraction == LOA_PLUSMINUS) && IsScientificNumber(SubExpr,LastPos)))
 				{
 					// set return value for the operand reached
-					NewOp = NextCharacter;
+					NewOp = std::string(1, NextCharacter);
 					break;
 				}
 			}
@@ -1157,8 +1170,11 @@ std::string FuncParser::GetNextTerm (const std::string & SubExpr, enmLevelOfAbst
 
 		// check that expression does not end with an operand
         if (LastPos == SubExpr.length()-1)
+		{
+			std::string charStr(1, SubExpr[LastPos]);
 			throw FuncParserErrorData(FuncParserErrorData::err_PARSE, ERROR_SOURCE,
-			                          "Expression ends with "+NextCharacter);
+			                          "Expression ends with "+charStr);
+		}
 
 		// check [No. of opening brackets = No. of closing brackets]
 		if (BracketsCount != 0)
@@ -1185,12 +1201,12 @@ std::string FuncParser::GetNextTerm (const std::string & SubExpr, enmLevelOfAbst
 	return NextTerm;
 }
 
-void FuncParser::adjustErrorDescription(FuncParserErrorData & ED, const std::string & subExpression)
+void FuncParser::adjustErrorDescription(FuncParserErrorData & ED, std::string_view subExpression)
 {
    if (ED.GetNumber() == FuncParserErrorData::err_PARSE)
    {
-      ED.SetNumber(FuncParserErrorData::err_RUNTIME); //to avoid multiple adjusting in case of nested exceptions 
-      ED.SetDescription("Error parsing substring '" + ParsedStringToDisplayString(subExpression) + "'\n" + ED.GetDescription() +
+      ED.SetNumber(FuncParserErrorData::err_RUNTIME); //to avoid multiple adjusting in case of nested exceptions
+      ED.SetDescription("Error parsing substring '" + ParsedStringToDisplayString(std::string(subExpression)) + "'\n" + ED.GetDescription() +
          "\n" + "String to parse: '" + _stringToParse + "'");
    }
 }
