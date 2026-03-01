@@ -345,7 +345,7 @@ void FuncParser::EvalExpression (FuncNode * SubNode, const std::string & SubExpr
 		bool FirstTerm = true;
 		size_t FirstPos = 0;
 		std::string NewOp;
-		std::string NextTerm;
+		std::string_view NextTerm;
 
       auto expression = SubExpr;
 
@@ -422,7 +422,7 @@ void FuncParser::EvalExpression (FuncNode * SubNode, const std::string & SubExpr
 				else
 				{
 					SubNode->SetSecondOperand(new FuncNode);
-					EvalExpression(SubNode->GetSecondOperand(), NextTerm, NextLevelOfAbstraction);
+					EvalExpression(SubNode->GetSecondOperand(), std::string(NextTerm), NextLevelOfAbstraction);
 				}
 				return;
 			}
@@ -434,7 +434,7 @@ void FuncParser::EvalExpression (FuncNode * SubNode, const std::string & SubExpr
 					SubNode->SetNodeType(FuncNode::NT_FUNCTION);
                     SubNode->SetNodeFunction(NewOp==Op1 ? EF1 : EF2);
 					SubNode->SetFirstOperand(new FuncNode);
-					EvalExpression(SubNode->GetFirstOperand(), NextTerm, NextLevelOfAbstraction);
+					EvalExpression(SubNode->GetFirstOperand(), std::string(NextTerm), NextLevelOfAbstraction);
 				}
 				else
 				{
@@ -446,7 +446,7 @@ void FuncParser::EvalExpression (FuncNode * SubNode, const std::string & SubExpr
                     NewOp = SubNode->GetNodeFunction()->GetFuncString();
 
 					SubNode->SetFirstOperand(new FuncNode);
-					EvalExpression(SubNode->GetFirstOperand(), NextTerm, NextLevelOfAbstraction);
+					EvalExpression(SubNode->GetFirstOperand(), std::string(NextTerm), NextLevelOfAbstraction);
 				}
 			}
 		}
@@ -735,7 +735,8 @@ void FuncParser::EvalFactor (FuncNode * SubNode, const std::string & SubExpr)
 		    (pElemFunc->GetType() == ElemFunction::EF_LESSEQUAL_F) || (pElemFunc->GetType() == ElemFunction::EF_UNEQUAL_F) ||
 		    (pElemFunc->GetType() == ElemFunction::EF_POWER_F) )
 		{
-			std::string FirstArg, SecondArg, Rest, NewOp;
+			std::string_view FirstArg, SecondArg, Rest;
+			std::string NewOp;
 			size_t FirstPos = 0;
 			std::string ArgList = SubExpr.substr(CharPos+1,SubExpr.length()-CharPos-2);
 
@@ -758,10 +759,10 @@ void FuncParser::EvalFactor (FuncNode * SubNode, const std::string & SubExpr)
 			SubNode->SetNodeFunction((*_elemFunctions)[FuncName]);
 
 			SubNode->SetFirstOperand(new FuncNode);
-			EvalExpression(SubNode->GetFirstOperand(), FirstArg, LOA_IF);
+			EvalExpression(SubNode->GetFirstOperand(), std::string(FirstArg), LOA_IF);
 
 			SubNode->SetSecondOperand(new FuncNode);
-			EvalExpression(SubNode->GetSecondOperand(), SecondArg, LOA_IF);
+			EvalExpression(SubNode->GetSecondOperand(), std::string(SecondArg), LOA_IF);
 
 			return;
 		}
@@ -796,7 +797,7 @@ void FuncParser::EvalIF (FuncNode * SubNode, const std::string & SubExpr)
 
 	try
 	{
-		std::string IfStatement, ThenStatement, ElseStatement;
+		std::string_view IfStatement, ThenStatement, ElseStatement;
 		size_t FirstPos = 0;
 		std::string NewOp;
 
@@ -826,9 +827,9 @@ void FuncParser::EvalIF (FuncNode * SubNode, const std::string & SubExpr)
 		SubNode->SetSecondOperand(new FuncNode);
 		SubNode->SetBranchCondition(new FuncNode);
 
-		EvalExpression(SubNode->GetBranchCondition(), IfStatement, LOA_IF);
-		EvalExpression(SubNode->GetFirstOperand(), ThenStatement, LOA_IF);
-		EvalExpression(SubNode->GetSecondOperand(), ElseStatement, LOA_IF);
+		EvalExpression(SubNode->GetBranchCondition(), std::string(IfStatement), LOA_IF);
+		EvalExpression(SubNode->GetFirstOperand(), std::string(ThenStatement), LOA_IF);
+		EvalExpression(SubNode->GetSecondOperand(), std::string(ElseStatement), LOA_IF);
 	}
 	catch(FuncParserErrorData & ED)
 	{
@@ -1022,7 +1023,7 @@ void FuncParser::RearrangeTerms (std::string & SubExpr, enmLevelOfAbstraction Le
 	{
 		std::vector<std::string> Op1_Terms;
 		std::vector<std::string> Op2_Terms;
-		std::string NextTerm;
+		std::string_view NextTerm;
 		size_t FirstPos = 0;
 		std::string NewOp, PreviousOp;
 		bool FirstTerm = true;
@@ -1036,16 +1037,16 @@ void FuncParser::RearrangeTerms (std::string & SubExpr, enmLevelOfAbstraction Le
 			if (FirstTerm)
 			{
 				// 1st term is automatically in Op1-List
-				Op1_Terms.push_back(NextTerm);
+				Op1_Terms.push_back(std::string(NextTerm));
 				FirstTerm = false;
 			}
 			else
 			{
 				// put current term in the list depending on operand BEFORE it (<PreviousOp>)
 				if (PreviousOp == Op1)
-					Op1_Terms.push_back(NextTerm);
+					Op1_Terms.push_back(std::string(NextTerm));
 				else
-					Op2_Terms.push_back(NextTerm);
+					Op2_Terms.push_back(std::string(NextTerm));
 			}
 
 			// check if last term and exit loop if so
@@ -1093,13 +1094,13 @@ void FuncParser::RearrangeTerms (std::string & SubExpr, enmLevelOfAbstraction Le
 	}
 }
 
-std::string FuncParser::GetNextTerm (const std::string & SubExpr, enmLevelOfAbstraction LevelOfAbstraction, const std::string
+std::string_view FuncParser::GetNextTerm (const std::string & SubExpr, enmLevelOfAbstraction LevelOfAbstraction, const std::string
                                      & Op1, const std::string & Op2, size_t & FirstPos, std::string & NewOp)
 {
 	// ______________________________________________________________________________________________________________________________
 	// Parses the string <SubExpr> starting at <FirstPos> till <Op1> or <Op2> is found (or the end of the string is reached)
 	// and returns next term in the expression .
-	// Returns empty string if no more terms available.
+	// Returns empty string_view if no more terms available.
 	//
 	// <NewOp> returns reached operand (<Op1> or <Op2>) or empty string for last term.
 	//
@@ -1108,7 +1109,7 @@ std::string FuncParser::GetNextTerm (const std::string & SubExpr, enmLevelOfAbst
 
 	const char * ERROR_SOURCE = "FuncParser::GetNextTerm";
 
-	std::string NextTerm;    // next found term (return value)
+	std::string_view NextTerm;    // next found term (return value)
 
 	try
 	{
@@ -1124,7 +1125,7 @@ std::string FuncParser::GetNextTerm (const std::string & SubExpr, enmLevelOfAbst
 		// reset next operation to be returned (return empty value for last term)
 		NewOp = "";
 
-		// if <FirstPos> is beyond the end of expression - return empty string
+		// if <FirstPos> is beyond the end of expression - return empty string_view
         if(FirstPos >= SubExpr.length())
 			return "";
 
@@ -1165,8 +1166,8 @@ std::string FuncParser::GetNextTerm (const std::string & SubExpr, enmLevelOfAbst
 			throw FuncParserErrorData(FuncParserErrorData::err_PARSE, ERROR_SOURCE,
 			                          "Wrong bracketing");
 
-		// get next term
-		NextTerm = SubExpr.substr(FirstPos, LastPos-FirstPos);
+		// get next term as a string_view (no copy)
+		NextTerm = std::string_view(SubExpr).substr(FirstPos, LastPos-FirstPos);
 
 		// let <FirstPos> point to the 1st character of the next term (required for the next call)
 		FirstPos = LastPos + 1;

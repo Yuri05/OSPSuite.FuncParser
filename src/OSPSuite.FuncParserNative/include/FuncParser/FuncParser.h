@@ -4,6 +4,7 @@
 #include "FuncParser/Constants.h"
 #include "FuncParser/ElemFunctions.h"
 #include <vector>
+#include <string_view>
 // ReSharper disable once CppUnusedIncludeDirective
 #include <assert.h>
 #include "FuncParser/FuncNode.h"
@@ -85,12 +86,12 @@ class FuncParser
                            const std::string & Op2);
 		
 		//Parses the string <SubExpr> starting at <FirstPos> till <Op1> or <Op2> is found (or the end of the string is reached) and returns next term in the expression .
-		//Returns empty string if no more terms available.
+		//Returns empty string_view if no more terms available.
 		//
 		//<NewOp> returns reached operand (<Op1> or <Op2>) or empty string for last term.
 		//
 		//<FirstPos> is adjusted to the start position of the next term at the end of the function
-		std::string GetNextTerm (const std::string & SubExpr, enmLevelOfAbstraction LevelOfAbstraction, const std::string &
+		std::string_view GetNextTerm (const std::string & SubExpr, enmLevelOfAbstraction LevelOfAbstraction, const std::string &
                                Op1, const std::string & Op2, size_t & FirstPos, std::string & NewOp);
 };
 
