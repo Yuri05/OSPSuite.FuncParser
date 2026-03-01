@@ -83,14 +83,14 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: ${{ vars.GHA_DEFAULT_RUNNER_MACOS }}
-            platform: MacOS
-            nuget_package: OSPSuite.FuncParser.MacOS.Arm64
-            version_h_modifier: "sed -i ''"
-          - os: macos-13
-            platform: MacOS
-            nuget_package: OSPSuite.FuncParser.MacOS.x64
-            version_h_modifier: "sed -i ''"
+          #- os: ${{ vars.GHA_DEFAULT_RUNNER_MACOS }}
+          #  platform: MacOS
+          #  nuget_package: OSPSuite.FuncParser.MacOS.Arm64
+          #  version_h_modifier: "sed -i ''"
+          #- os: macos-13
+          #  platform: MacOS
+          #  nuget_package: OSPSuite.FuncParser.MacOS.x64
+          #  version_h_modifier: "sed -i ''"
           - os: ubuntu-22.04
             platform: ${{ vars.GHA_DEFAULT_RUNNER_UBUNTU }}
             nuget_package: OSPSuite.FuncParser.Ubuntu22
