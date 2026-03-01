@@ -202,9 +202,9 @@ FuncNode * FuncParser::Parse (const std::string & ParsedString, const std::vecto
 
 		for (i=0; i<_ParsedString.length(); i++)
 		{
-			if (_ParsedString.substr(i,1) == "(")
+			if (_ParsedString[i] == '(')
 				BracketsCount++;
-			else if (_ParsedString.substr(i,1) == ")")
+			else if (_ParsedString[i] == ')')
 				BracketsCount--;
 		}
 
@@ -384,7 +384,7 @@ void FuncParser::EvalExpression (FuncNode * SubNode, const std::string & SubExpr
 				EF2 = (*_elemFunctions)[ElemFunction::EF_MINUS];
 				NextLevelOfAbstraction = LOA_MULDIV;
 				//replace expression beginning with - (e.g. -2*x+3) with 0-<old expr.>
-				if (expression.substr(0,1) == "-")
+				if (expression[0] == '-')
 					expression = "0"+expression;
 				break;
 			case LOA_MULDIV:
@@ -469,7 +469,7 @@ void FuncParser::EvalNOTOperand (FuncNode * SubNode, const std::string & SubExpr
 
 	try
 	{
-		if (SubExpr.substr(0,1) == conNOTSymbol)
+		if (SubExpr[0] == conNOTSymbol[0])
 		{
 			SubNode->SetNodeType(FuncNode::NT_FUNCTION);
             SubNode->SetNodeFunction((*_elemFunctions)[ElemFunction::EF_NOT]);
@@ -499,7 +499,7 @@ void FuncParser::EvalComparison (FuncNode * SubNode, const std::string & SubExpr
 	{
         long BracketsCount;
         unsigned int i;
-		std::string NextCharacter;
+		char NextCharacter;
 		std::string SubSubExpr;
 		size_t FirstOperandLastPosition, SecondOperandFirstPosition;
 
@@ -510,13 +510,13 @@ void FuncParser::EvalComparison (FuncNode * SubNode, const std::string & SubExpr
 		BracketsCount = 0;
 		for (i=0; i<SubExpr.length(); i++)
 		{
-			NextCharacter = SubExpr.substr(i,1);
-			if (NextCharacter == "(")
+			NextCharacter = SubExpr[i];
+			if (NextCharacter == '(')
 				BracketsCount++;
-			else if (NextCharacter == ")")
+			else if (NextCharacter == ')')
 				BracketsCount--;
-			else if (((NextCharacter == "<") || (NextCharacter == ">") ||
-                      (NextCharacter == "=") || (NextCharacter == "!")) &&
+			else if (((NextCharacter == '<') || (NextCharacter == '>') ||
+                      (NextCharacter == '=') || (NextCharacter == '!')) &&
                      (BracketsCount == 0))
             {
             	if (i == 0)
@@ -529,7 +529,7 @@ void FuncParser::EvalComparison (FuncNode * SubNode, const std::string & SubExpr
           		FirstOperandLastPosition = i - 1;
           		SubSubExpr = SubExpr.substr(FirstOperandLastPosition+1, 2);
 
-          		if ((NextCharacter == "!") && (SubSubExpr.substr(1,1) != "="))
+          		if ((NextCharacter == '!') && (SubSubExpr[1] != '='))
 					throw FuncParserErrorData(FuncParserErrorData::err_PARSE, ERROR_SOURCE,
 					                          "Missing '=' after '!'");
           		if ((SubSubExpr == "<=") || (SubSubExpr == ">=") ||
@@ -582,7 +582,7 @@ void FuncParser::EvalFactor (FuncNode * SubNode, const std::string & SubExpr)
 		std::string FuncName, VarName;
 		long BracketsCount;
         size_t CharPos;
-		std::string NextCharacter;
+		char NextCharacter;
 
 		if (SubExpr.length() == 0)
 			throw FuncParserErrorData(FuncParserErrorData::err_PARSE, ERROR_SOURCE,
@@ -616,10 +616,10 @@ void FuncParser::EvalFactor (FuncNode * SubNode, const std::string & SubExpr)
 			BracketsCount = 0;
 			for (i=0; i<=CharPos - 1; i++)
 			{
-				NextCharacter = SubExpr.substr(i,1);
-				if (NextCharacter == "(")
+				NextCharacter = SubExpr[i];
+				if (NextCharacter == '(')
 					BracketsCount++;
-				else if (NextCharacter == ")")
+				else if (NextCharacter == ')')
 					BracketsCount--;
 			}
 			if (BracketsCount == 0) //so a^b^c will be evaluated as a^(b^c)
@@ -644,7 +644,7 @@ void FuncParser::EvalFactor (FuncNode * SubNode, const std::string & SubExpr)
 			}
 
 		//check if variable with argument <Var>(<Expr>)
-		if (SubExpr.substr(SubExpr.length()-1,1) == ")")
+		if (SubExpr[SubExpr.length()-1] == ')')
 		{
 			CharPos = SubExpr.find_first_of('(');
 			if (CharPos > 0)
@@ -696,7 +696,7 @@ void FuncParser::EvalFactor (FuncNode * SubNode, const std::string & SubExpr)
 		}
 
 		//check if SubExpr is known (elementary) function <f>(<Expr>)
-		if (SubExpr.substr(SubExpr.length()-1,1) != ")")
+		if (SubExpr[SubExpr.length()-1] != ')')
 			throw FuncParserErrorData(FuncParserErrorData::err_PARSE, ERROR_SOURCE,
 			                          "Invalid Expression");
 		CharPos = SubExpr.find_first_of('(');
@@ -1114,7 +1114,7 @@ std::string FuncParser::GetNextTerm (const std::string & SubExpr, enmLevelOfAbst
 	{
 		size_t LastPos = FirstPos;   //index of the next character to be analyzed
 		long BracketsCount = 0;    // No. of brackets in the expression
-		std::string NextCharacter; // next char to be investigated
+		char NextCharacter; // next char to be investigated
 
 		// check expression is not empty
 		if (SubExpr.length() == 0)
@@ -1136,19 +1136,19 @@ std::string FuncParser::GetNextTerm (const std::string & SubExpr, enmLevelOfAbst
 				break;
 
 			// read next char and analyze it
-			NextCharacter = SubExpr.substr(LastPos,1);
-			if (NextCharacter == "(")
+			NextCharacter = SubExpr[LastPos];
+			if (NextCharacter == '(')
 				BracketsCount++;
-			else if(NextCharacter == ")")
+			else if(NextCharacter == ')')
 				BracketsCount--;
-			else if (((NextCharacter == Op1) || (NextCharacter == Op2)) && (BracketsCount == 0))
+			else if (((NextCharacter == Op1[0]) || (NextCharacter == Op2[0])) && (BracketsCount == 0))
 			{
 				//if it's not a number in scientific notation - stop
 				//<IsScientificNumber> checks NOT whether +/- is reached, so check it here
 				if (! ((LevelOfAbstraction == LOA_PLUSMINUS) && IsScientificNumber(SubExpr,LastPos)))
 				{
 					// set return value for the operand reached
-					NewOp = NextCharacter;
+					NewOp = std::string(1, NextCharacter);
 					break;
 				}
 			}
@@ -1158,7 +1158,7 @@ std::string FuncParser::GetNextTerm (const std::string & SubExpr, enmLevelOfAbst
 		// check that expression does not end with an operand
         if (LastPos == SubExpr.length()-1)
 			throw FuncParserErrorData(FuncParserErrorData::err_PARSE, ERROR_SOURCE,
-			                          "Expression ends with "+NextCharacter);
+			                          "Expression ends with "+std::string(1, NextCharacter));
 
 		// check [No. of opening brackets = No. of closing brackets]
 		if (BracketsCount != 0)
